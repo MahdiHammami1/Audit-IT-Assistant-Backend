@@ -8,6 +8,9 @@ import java.util.UUID;
 
 public interface EvaluationService {
     EvaluationResponse getEvaluationByTestResult(UUID testResultId);
+    EvaluationResponse getEvaluationById(UUID id);
+    List<EvaluationResponse> getAllEvaluations();
     List<EvaluationResponse> getEvaluationsByMission(UUID missionId);
     EvaluationResponse validateEvaluation(UUID evaluationId, ValidateEvaluationRequest request, UUID validatorId);
+    long deleteAll();
 }

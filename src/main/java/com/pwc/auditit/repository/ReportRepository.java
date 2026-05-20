@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
-public interface ReportRepository extends MongoRepository<Report, UUID> {
+public interface ReportRepository extends MongoRepository<Report, String> {
     List<Report> findByMissionIdOrderByGeneratedAtDesc(UUID missionId);
     List<Report> findByMissionIdAndType(UUID missionId, ReportType type);
 }

@@ -57,20 +57,10 @@ public class AuthController {
      */
     @PostMapping("/signin")
     @Operation(
-        summary = "Sign in / Login",
+        summary = "Signin / Login",
         description = "Authenticate user with email and password. Returns JWT token and user information."
     )
-    @ApiResponses(value = {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "200",
-            description = "Sign in successful - JWT token returned",
-            content = @Content(schema = @Schema(implementation = ApiResponse.class))
-        ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "401",
-            description = "Invalid email or password"
-        )
-    })
+
     public ResponseEntity<ApiResponse<AuthResponse>> signIn(@Valid @RequestBody SignInRequest request) {
         log.info("Received sign in request for email: {}", request.getEmail());
         try {

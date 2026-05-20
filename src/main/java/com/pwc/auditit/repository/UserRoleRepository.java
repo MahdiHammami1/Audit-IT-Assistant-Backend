@@ -11,6 +11,7 @@ import java.util.UUID;
 @Repository
 public interface UserRoleRepository extends MongoRepository<UserRole, UUID> {
     List<UserRole> findByUserId(UUID userId);
+    List<UserRole> findByRole(AppRole role);
     boolean existsByUserIdAndRole(UUID userId, AppRole role);
     void deleteByUserIdAndRole(UUID userId, AppRole role);
 }

@@ -11,12 +11,10 @@ import java.util.UUID;
 public interface ReportService {
     ReportResponse generateReport(UUID missionId, UUID currentUserId);
     ReportResponse getReport(UUID reportId);
+    List<ReportResponse> getAllReports();
     List<ReportResponse> getReportsByMission(UUID missionId);
     ReportResponse updateSection(UUID reportId, UUID sectionId, UpdateReportSectionRequest request);
     void finalizeReport(UUID reportId);
     byte[] exportReportAsDocx(UUID reportId);
-
-
-
-
+    long deleteAll();
 }

@@ -41,6 +41,26 @@ public class EmailTestController {
     }
 
     /**
+     * Envoyer un email de test via POST
+     * POST /api/test/send-email
+     */
+    @PostMapping("/send-email")
+    public ResponseEntity<?> sendTestEmailPost(
+            @RequestParam String to,
+            @RequestParam String subject,
+            @RequestParam String body
+    ) {
+        try {
+            emailService.sendSimpleEmail(to, subject, body);
+            return ResponseEntity.ok(new Response(true, "Email envoyé avec succès à: " + to));
+        } catch (Exception e) {
+            log.error("Erreur lors de l'envoi de l'email de test: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response(false, "Erreur: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Envoyer un email HTML de test
      * GET /api/test/send-html-email?to=user@example.com&subject=Test HTML
      */

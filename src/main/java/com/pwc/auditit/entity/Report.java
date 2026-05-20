@@ -17,8 +17,7 @@ import java.util.UUID;
 public class Report {
 
     @Id
-    private UUID id;
-
+    private String id;
     @DBRef
     private Mission mission;
 
@@ -29,8 +28,6 @@ public class Report {
     @Builder.Default
     private Instant generatedAt = Instant.now();
 
-    @DBRef
-    private Profile generatedBy;
 
     @Builder.Default
     private ReportDocStatus statut = ReportDocStatus.BROUILLON;

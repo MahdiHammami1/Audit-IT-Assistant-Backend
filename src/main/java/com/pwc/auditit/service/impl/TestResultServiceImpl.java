@@ -45,6 +45,10 @@ public class TestResultServiceImpl implements TestResultService {
                             .orElseThrow(() -> new ResourceNotFoundException("Control", controlId));
                     TestResult tr = TestResult.builder()
                             .mission(mission).application(app).control(control).build();
+
+                    // Generate UUID before save
+                    tr.setId(UUID.randomUUID());
+
                     return toResponse(testResultRepository.save(tr));
                 });
     }
@@ -54,6 +58,13 @@ public class TestResultServiceImpl implements TestResultService {
     public TestResultResponse getTestResult(UUID testResultId) {
         return toResponse(testResultRepository.findById(testResultId)
                 .orElseThrow(() -> new ResourceNotFoundException("TestResult", testResultId)));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TestResultResponse> getAllTestResults() {
+        return testResultRepository.findAll()
+                .stream().map(this::toResponse).collect(Collectors.toList());
     }
 
     @Override
@@ -84,6 +95,11 @@ public class TestResultServiceImpl implements TestResultService {
                         .findByTestResultIdAndControlFieldId(testResultId, entry.getControlFieldId())
                         .orElse(TestFieldValue.builder().testResult(tr).controlField(field).build());
 
+                // Generate UUID if new
+                if (fv.getId() == null) {
+                    fv.setId(UUID.randomUUID());
+                }
+
                 fv.setValueText(entry.getValueText());
                 fv.setValueNumber(entry.getValueNumber());
                 fv.setValueDate(entry.getValueDate());
@@ -107,6 +123,14 @@ public class TestResultServiceImpl implements TestResultService {
         TestResult saved = testResultRepository.save(tr);
         missionService.recalculateProgress(tr.getMission().getId());
         return toResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public long deleteAll() {
+        long count = testResultRepository.count();
+        testResultRepository.deleteAll();
+        return count;
     }
 
     private TestResultResponse toResponse(TestResult tr) {

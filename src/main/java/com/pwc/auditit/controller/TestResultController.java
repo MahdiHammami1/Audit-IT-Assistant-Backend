@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -22,6 +23,12 @@ import java.util.UUID;
 public class TestResultController {
 
     private final TestResultService testResultService;
+
+    @GetMapping
+    @Operation(summary = "Get all test results")
+    public ResponseEntity<ApiResponse<List<TestResultResponse>>> getAllTestResults() {
+        return ResponseEntity.ok(ApiResponse.ok(testResultService.getAllTestResults()));
+    }
 
     @GetMapping("/mission/{missionId}")
     @Operation(summary = "Get all test results for a mission")
@@ -67,5 +74,17 @@ public class TestResultController {
     @Operation(summary = "Mark a test as complete")
     public ResponseEntity<ApiResponse<TestResultResponse>> markComplete(@PathVariable UUID testResultId) {
         return ResponseEntity.ok(ApiResponse.ok(testResultService.markComplete(testResultId)));
+    }
+
+    @DeleteMapping("/all")
+    @Operation(summary = "Delete all test results")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> deleteAllTestResults() {
+        long deletedCount = testResultService.deleteAll();
+        Map<String, Object> response = Map.of(
+                "entity", "TestResult",
+                "deletedCount", deletedCount,
+                "status", "success"
+        );
+        return ResponseEntity.ok(ApiResponse.ok(response));
     }
 }

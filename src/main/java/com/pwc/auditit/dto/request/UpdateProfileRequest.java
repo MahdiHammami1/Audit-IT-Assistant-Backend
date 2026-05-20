@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.util.Set;
 
 @Data
 @Builder
@@ -28,5 +29,6 @@ public class UpdateProfileRequest {
 
     @Size(max = 500, message = "Avatar URL should not exceed 500 characters")
     private String avatarUrl;
-}
 
+    private Set<String> roles;
+}

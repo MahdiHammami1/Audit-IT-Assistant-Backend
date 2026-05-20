@@ -10,12 +10,11 @@ import java.util.UUID;
 
 @Data @Builder
 public class ReportResponse {
-    private UUID id;
+    private String id;
     private UUID missionId;
     private ReportType type;
     private String title;
     private Instant generatedAt;
-    private ProfileResponse generatedBy;
     private ReportDocStatus statut;
     private String filePathWord;
     private String filePathPdf;

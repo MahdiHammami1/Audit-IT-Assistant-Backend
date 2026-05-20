@@ -49,6 +49,9 @@ public class MissionServiceImpl implements MissionService {
                 .notes(request.getNotes())
                 .build();
 
+        // Generate UUID before save
+        mission.setId(UUID.randomUUID());
+
         Mission saved = missionRepository.save(mission);
 
         // Add team members
@@ -58,6 +61,10 @@ public class MissionServiceImpl implements MissionService {
                         .orElseThrow(() -> new ResourceNotFoundException("Profile", memberId));
                 MissionTeamMember teamMember = MissionTeamMember.builder()
                         .mission(saved).user(member).build();
+
+                // Generate UUID before save
+                teamMember.setId(UUID.randomUUID());
+
                 teamMemberRepository.save(teamMember);
             });
         }
@@ -71,6 +78,10 @@ public class MissionServiceImpl implements MissionService {
                         .type(appReq.getType())
                         .domains(appReq.getDomains() != null ? appReq.getDomains() : List.of())
                         .build();
+
+                // Generate UUID before save
+                app.setId(UUID.randomUUID());
+
                 applicationRepository.save(app);
             });
         }
@@ -88,6 +99,12 @@ public class MissionServiceImpl implements MissionService {
     @Override
     @Transactional(readOnly = true)
     public List<MissionResponse> getAllMissions(String societe, String exercice, MissionStatus statut) {
+        // If no filters provided, return all missions
+        if (societe == null && exercice == null && statut == null) {
+            return missionRepository.findAll()
+                    .stream().map(this::toResponse).collect(Collectors.toList());
+        }
+        // Otherwise use the filter query
         return missionRepository.findWithFilters(societe, exercice, statut)
                 .stream().map(this::toResponse).collect(Collectors.toList());
     }
@@ -97,6 +114,25 @@ public class MissionServiceImpl implements MissionService {
     public List<MissionResponse> getAccessibleMissions(UUID userId) {
         return missionRepository.findAccessibleByUser(userId)
                 .stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ApplicationResponse> getMissionApplications(UUID missionId) {
+        // Verify mission exists
+        missionRepository.findById(missionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Mission", missionId));
+
+        // Get applications directly from repository using missionId
+        return applicationRepository.findByMissionIdOrderByCreatedAtAsc(missionId).stream()
+                .map(app -> ApplicationResponse.builder()
+                        .id(app.getId())
+                        .name(app.getName())
+                        .type(app.getType())
+                        .domains(app.getDomains())
+                        .missionId(missionId)
+                        .build())
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -147,7 +183,13 @@ public class MissionServiceImpl implements MissionService {
                 .orElseThrow(() -> new ResourceNotFoundException("Mission", missionId));
         Profile user = profileRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Profile", userId));
-        teamMemberRepository.save(MissionTeamMember.builder().mission(mission).user(user).build());
+        MissionTeamMember teamMember = MissionTeamMember.builder()
+                .mission(mission)
+                .user(user)
+                .build();
+        // Generate UUID before save
+        teamMember.setId(UUID.randomUUID());
+        teamMemberRepository.save(teamMember);
     }
 
     @Override
@@ -167,6 +209,13 @@ public class MissionServiceImpl implements MissionService {
         else if (progress == 100) mission.setStatut(MissionStatus.RAPPORT_GENERE);
         else mission.setStatut(MissionStatus.EN_COURS);
         missionRepository.save(mission);
+    }
+
+    @Override
+    public long deleteAll() {
+        long count = missionRepository.count();
+        missionRepository.deleteAll();
+        return count;
     }
 
     private MissionResponse toResponse(Mission mission) {

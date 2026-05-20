@@ -105,6 +105,18 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handle Data Integrity Violation Exception
+     * Returns: 400 Bad Request
+     */
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDataIntegrityViolationException(
+            org.springframework.dao.DataIntegrityViolationException ex) {
+        log.warn("Data integrity violation: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error("Data integrity error: " + ex.getMessage()));
+    }
+
+    /**
      * Handle all other generic exceptions
      * Returns: 500 Internal Server Error
      */

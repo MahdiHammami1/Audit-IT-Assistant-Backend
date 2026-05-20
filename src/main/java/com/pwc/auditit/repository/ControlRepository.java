@@ -11,6 +11,5 @@ import java.util.UUID;
 @Repository
 public interface ControlRepository extends MongoRepository<Control, UUID> {
     Optional<Control> findByCode(String code);
-    List<Control> findByDomainCodeOrderByOrderIndexAsc(String domainCode);
     List<Control> findByDomainIdOrderByOrderIndexAsc(UUID domainId);
 }

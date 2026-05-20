@@ -57,9 +57,13 @@ echo.
 REM Step 5: Run application
 echo [5/5] Starting application...
 echo.
+REM Use local MongoDB by default. To use Atlas, set MONGODB_URI before running this script.
+if "%MONGODB_URI%"=="" (
+    set "MONGODB_URI=mongodb://127.0.0.1:27017/auditit"
+)
+
 echo MongoDB Configuration:
-echo   URL: mongodb+srv://mahdihammami:testtest@cluster01.v7ca8ov.mongodb.net/db1?appName=Cluster01
-echo   Database: db1
+echo   URL: !MONGODB_URI!
 echo.
 echo Application will start on:
 echo   http://localhost:8080/api
@@ -68,9 +72,6 @@ echo.
 echo Press Ctrl+C to stop the application
 echo ==========================================
 echo.
-
-REM Set MongoDB URI environment variable
-set MONGODB_URI=mongodb+srv://mahdihammami:testtest@cluster01.v7ca8ov.mongodb.net/db1?appName=Cluster01
 
 REM Run JAR
 java -jar target\auditit-1.0.0.jar

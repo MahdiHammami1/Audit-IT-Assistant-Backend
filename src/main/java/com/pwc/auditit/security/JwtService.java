@@ -46,6 +46,11 @@ public class JwtService {
         return UUID.fromString(validateToken(token).getSubject());
     }
 
+    public String extractEmail(String token) {
+        Object email = validateToken(token).get("email");
+        return email != null ? email.toString() : null;
+    }
+
     public boolean isTokenValid(String token) {
         try {
             Claims claims = validateToken(token);

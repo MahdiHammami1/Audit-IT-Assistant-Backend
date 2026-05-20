@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -23,6 +24,18 @@ import java.util.UUID;
 public class EvaluationController {
 
     private final EvaluationService evaluationService;
+
+    @GetMapping
+    @Operation(summary = "Get all evaluations")
+    public ResponseEntity<ApiResponse<List<EvaluationResponse>>> getAllEvaluations() {
+        return ResponseEntity.ok(ApiResponse.ok(evaluationService.getAllEvaluations()));
+    }
+
+    @PostMapping("/{testResultId}")
+    @Operation(summary = "Create or get AI evaluation for a test result")
+    public ResponseEntity<ApiResponse<EvaluationResponse>> createEvaluation(@PathVariable UUID testResultId) {
+        return ResponseEntity.ok(ApiResponse.ok(evaluationService.getEvaluationByTestResult(testResultId)));
+    }
 
     @GetMapping("/mission/{missionId}")
     @Operation(summary = "Get all evaluations for a mission")
@@ -36,6 +49,12 @@ public class EvaluationController {
         return ResponseEntity.ok(ApiResponse.ok(evaluationService.getEvaluationByTestResult(testResultId)));
     }
 
+    @GetMapping("/{id}")
+    @Operation(summary = "Get evaluation by ID")
+    public ResponseEntity<ApiResponse<EvaluationResponse>> getEvaluation(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.ok(evaluationService.getEvaluationById(id)));
+    }
+
     @PatchMapping("/{evaluationId}/validate")
     @Operation(summary = "Validate or reject an AI evaluation")
     public ResponseEntity<ApiResponse<EvaluationResponse>> validate(
@@ -44,5 +63,17 @@ public class EvaluationController {
             @CurrentUser Profile currentUser) {
         return ResponseEntity.ok(ApiResponse.ok(
                 evaluationService.validateEvaluation(evaluationId, request, currentUser.getId())));
+    }
+
+    @DeleteMapping("/all")
+    @Operation(summary = "Delete all evaluations")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> deleteAllEvaluations() {
+        long deletedCount = evaluationService.deleteAll();
+        Map<String, Object> response = Map.of(
+                "entity", "Evaluation",
+                "deletedCount", deletedCount,
+                "status", "success"
+        );
+        return ResponseEntity.ok(ApiResponse.ok(response));
     }
 }

@@ -36,6 +36,12 @@ public class Profile {
 
     private String avatarUrl;
 
+    // TODO: Move Microsoft Graph token encryption to a dedicated MongoDB persistence layer before production use.
+    private String graphAccessToken;
+    private String graphRefreshToken;
+    private Instant graphTokenExpiresAt;
+    private Instant graphConnectedAt;
+
     @Builder.Default
     private String verificationCode = null;
 

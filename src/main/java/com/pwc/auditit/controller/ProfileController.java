@@ -1,5 +1,6 @@
 package com.pwc.auditit.controller;
 
+import com.pwc.auditit.dto.request.CreateProfileRequest;
 import com.pwc.auditit.dto.request.UpdateProfileRequest;
 import com.pwc.auditit.dto.response.ApiResponse;
 import com.pwc.auditit.dto.response.ProfileResponse;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -34,6 +36,27 @@ public class ProfileController {
     @Operation(summary = "Get all user profiles")
     public ResponseEntity<ApiResponse<List<ProfileResponse>>> getAllProfiles() {
         return ResponseEntity.ok(ApiResponse.ok(profileService.getAllProfiles()));
+    }
+
+    @PostMapping
+    @Operation(summary = "Create a new user profile")
+    public ResponseEntity<ApiResponse<ProfileResponse>> createProfile(
+            @Valid @RequestBody CreateProfileRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(profileService.createProfile(request)));
+    }
+
+    @GetMapping("/auditors")
+    @Operation(summary = "Get all auditors")
+    public ResponseEntity<ApiResponse<List<ProfileResponse>>> getAuditeurs() {
+        return ResponseEntity.ok(ApiResponse.ok(profileService.getAuditeurs()));
+    }
+
+    @PutMapping("/me")
+    @Operation(summary = "Update current user profile")
+    public ResponseEntity<ApiResponse<ProfileResponse>> updateCurrentProfile(
+            @CurrentUser Profile currentUser,
+            @Valid @RequestBody UpdateProfileRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(profileService.updateProfile(currentUser.getId(), request)));
     }
 
     @GetMapping("/{id}")
@@ -58,11 +81,24 @@ public class ProfileController {
         return ResponseEntity.ok(ApiResponse.ok(profileService.partialUpdateProfile(id, request)));
     }
 
-    // ...existing code...
+    @PutMapping("/me/roles")
+    @Operation(summary = "Update current user roles")
+    public ResponseEntity<ApiResponse<ProfileResponse>> updateCurrentUserRoles(
+            @CurrentUser Profile currentUser,
+            @RequestBody java.util.Set<String> roleNames) {
+        return ResponseEntity.ok(ApiResponse.ok(profileService.updateUserRoles(currentUser.getId(), roleNames)));
+    }
+
+    @PutMapping("/{id}/roles")
+    @Operation(summary = "Update user roles by ID")
+    public ResponseEntity<ApiResponse<ProfileResponse>> updateUserRoles(
+            @PathVariable UUID id,
+            @RequestBody java.util.Set<String> roleNames) {
+        return ResponseEntity.ok(ApiResponse.ok(profileService.updateUserRoles(id, roleNames)));
+    }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete profile by ID")
-
     public ResponseEntity<ApiResponse<Void>> deleteProfile(@PathVariable UUID id) {
         profileService.deleteProfile(id);
         return ResponseEntity.ok(ApiResponse.ok(null));
@@ -70,9 +106,20 @@ public class ProfileController {
 
     @DeleteMapping("/batch")
     @Operation(summary = "Delete multiple profiles by IDs")
-
     public ResponseEntity<ApiResponse<Void>> deleteProfilesBatch(@RequestBody List<UUID> ids) {
         profileService.deleteProfilesBatch(ids);
         return ResponseEntity.ok(ApiResponse.ok(null));
+    }
+
+    @DeleteMapping("/all")
+    @Operation(summary = "Delete all profiles")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> deleteAllProfiles() {
+        long deletedCount = profileService.deleteAll();
+        Map<String, Object> response = Map.of(
+                "entity", "Profile",
+                "deletedCount", deletedCount,
+                "status", "success"
+        );
+        return ResponseEntity.ok(ApiResponse.ok(response));
     }
 }

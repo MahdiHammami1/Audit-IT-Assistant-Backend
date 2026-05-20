@@ -3,10 +3,10 @@ package com.pwc.auditit.controller;
 import com.pwc.auditit.dto.request.CreateMissionRequest;
 import com.pwc.auditit.dto.request.UpdateMissionStatusRequest;
 import com.pwc.auditit.dto.response.ApiResponse;
+import com.pwc.auditit.dto.response.ApplicationResponse;
 import com.pwc.auditit.dto.response.MissionResponse;
 import com.pwc.auditit.dto.response.MissionSummaryResponse;
 import com.pwc.auditit.entity.Profile;
-import com.pwc.auditit.entity.enums.MissionStatus;
 import com.pwc.auditit.security.CurrentUser;
 import com.pwc.auditit.service.MissionService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,13 +18,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/missions")
 @RequiredArgsConstructor
 @Tag(name = "Missions", description = "ITGC Audit mission management")
-public class MissionController {
+public class    MissionController {
 
     private final MissionService missionService;
 
@@ -38,12 +39,9 @@ public class MissionController {
     }
 
     @GetMapping
-    @Operation(summary = "Get all missions with optional filters")
-    public ResponseEntity<ApiResponse<List<MissionResponse>>> getAllMissions(
-            @RequestParam(required = false) String societe,
-            @RequestParam(required = false) String exercice,
-            @RequestParam(required = false) MissionStatus statut) {
-        return ResponseEntity.ok(ApiResponse.ok(missionService.getAllMissions(societe, exercice, statut)));
+    @Operation(summary = "Get all missions")
+    public ResponseEntity<ApiResponse<List<MissionResponse>>> getAllMissions() {
+        return ResponseEntity.ok(ApiResponse.ok(missionService.getAllMissions(null, null, null)));
     }
 
     @GetMapping("/my-missions")
@@ -64,6 +62,14 @@ public class MissionController {
     public ResponseEntity<ApiResponse<MissionSummaryResponse>> getMissionSummary(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.ok(missionService.getMissionSummary(id)));
     }
+
+    @GetMapping("/{id}/applications")
+    @Operation(summary = "Get all applications for a mission")
+    public ResponseEntity<ApiResponse<List<ApplicationResponse>>> getMissionApplications(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.ok(missionService.getMissionApplications(id)));
+    }
+
+    // ...existing code...
 
     @PatchMapping("/{id}/status")
     @Operation(summary = "Update mission status")
@@ -94,5 +100,17 @@ public class MissionController {
     public ResponseEntity<ApiResponse<Void>> deleteMission(@PathVariable UUID id) {
         missionService.deleteMission(id);
         return ResponseEntity.ok(ApiResponse.ok("Mission deleted", null));
+    }
+
+    @DeleteMapping("/all")
+    @Operation(summary = "Delete all missions")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> deleteAllMissions() {
+        long deletedCount = missionService.deleteAll();
+        Map<String, Object> response = Map.of(
+                "entity", "Mission",
+                "deletedCount", deletedCount,
+                "status", "success"
+        );
+        return ResponseEntity.ok(ApiResponse.ok(response));
     }
 }

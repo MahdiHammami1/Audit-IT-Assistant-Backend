@@ -32,15 +32,15 @@ public class ReportServiceImpl implements ReportService {
     public ReportResponse generateReport(UUID missionId, UUID currentUserId) {
         Mission mission = missionRepository.findById(missionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Mission", missionId));
-        Profile generator = profileRepository.findById(currentUserId)
-                .orElseThrow(() -> new ResourceNotFoundException("Profile", currentUserId));
 
         Report report = Report.builder()
                 .mission(mission)
                 .type(mission.getTypeRapport())
                 .title("Rapport ITGC — " + mission.getSociete() + " — " + mission.getExercice())
-                .generatedBy(generator)
                 .build();
+
+        // Generate UUID before save
+        report.setId(UUID.randomUUID().toString());
         Report saved = reportRepository.save(report);
 
         // Generate sections from evaluations
@@ -56,45 +56,57 @@ public class ReportServiceImpl implements ReportService {
 
         String opinion = defMaj > 0 || defMin >= 3 ? "Insuffisant" : defMin > 0 ? "Partiellement efficace" : "Efficace";
 
-        sectionRepository.save(ReportSection.builder().report(report).orderIndex(1)
+        // Section 1: Préambule
+        ReportSection section1 = ReportSection.builder().report(report).orderIndex(1)
                 .title("Préambule")
                 .content("Dans le cadre de notre mission d'audit des états financiers de " + mission.getSociete()
                         + " pour l'exercice " + mission.getExercice()
                         + ", nous avons procédé à l'évaluation des contrôles généraux informatiques (ITGC).")
-                .build());
+                .build();
+        section1.setId(UUID.randomUUID().toString());
+        sectionRepository.save(section1);
 
-        sectionRepository.save(ReportSection.builder().report(report).orderIndex(2)
+        // Section 2: Opinion globale
+        ReportSection section2 = ReportSection.builder().report(report).orderIndex(2)
                 .title("Opinion globale sur les ITGC")
                 .content("Sur la base de nos travaux, notre opinion sur l'efficacité des ITGC est : " + opinion
                         + ". " + defMaj + " déficience(s) majeure(s) et " + defMin + " déficience(s) mineure(s) ont été identifiées.")
-                .build());
+                .build();
+        section2.setId(UUID.randomUUID().toString());
+        sectionRepository.save(section2);
 
-        sectionRepository.save(ReportSection.builder().report(report).orderIndex(3)
+        // Section 3: Approche d'audit
+        ReportSection section3 = ReportSection.builder().report(report).orderIndex(3)
                 .title("Approche d'audit")
                 .content("Nos travaux ont porté sur les domaines ITGC suivants : Accès aux programmes et données (APD), "
                         + "Program Change (PC) et Computer Operations (CO), conformément à la méthodologie PwC.")
-                .build());
+                .build();
+        section3.setId(UUID.randomUUID().toString());
+        sectionRepository.save(section3);
 
+        // Additional sections for deficiencies
         int[] idx = {4};
         evals.stream()
                 .filter(e -> e.getResult() != EvaluationResult.CONFORME)
                 .forEach(e -> {
                     String controlCode = e.getTestResult().getControl().getCode();
-                    sectionRepository.save(ReportSection.builder().report(report)
+                    ReportSection section = ReportSection.builder().report(report)
                             .orderIndex(idx[0]++)
                             .title("Constat — " + controlCode)
                             .content("Résultat : " + e.getResult().getLabel()
                                     + "\n\nConstat : " + e.getAiSummary()
                                     + (e.getImpact() != null ? "\n\nImpact : " + e.getImpact() : "")
                                     + "\n\nType de déficience : " + (e.getDeficiencyType() != null ? e.getDeficiencyType() : "N/A"))
-                            .build());
+                            .build();
+                    section.setId(UUID.randomUUID().toString());
+                    sectionRepository.save(section);
                 });
     }
 
     @Override
     @Transactional(readOnly = true)
     public ReportResponse getReport(UUID reportId) {
-        return toResponse(reportRepository.findById(reportId)
+        return toResponse(reportRepository.findById(reportId.toString())
                 .orElseThrow(() -> new ResourceNotFoundException("Report", reportId)));
     }
 
@@ -107,22 +119,22 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public ReportResponse updateSection(UUID reportId, UUID sectionId, UpdateReportSectionRequest request) {
-        Report report = reportRepository.findById(reportId)
+        Report report = reportRepository.findById(reportId.toString())
                 .orElseThrow(() -> new ResourceNotFoundException("Report", reportId));
         if (report.getStatut() == ReportDocStatus.FINALISE) {
             throw new BusinessException("Cannot edit a finalized report");
         }
-        ReportSection section = sectionRepository.findById(sectionId)
+        ReportSection section = sectionRepository.findById(sectionId.toString())
                 .orElseThrow(() -> new ResourceNotFoundException("ReportSection", sectionId));
         if (!section.getIsEditable()) throw new BusinessException("This section is not editable");
         section.setContent(request.getContent());
         sectionRepository.save(section);
-        return toResponse(reportRepository.findById(reportId).orElseThrow());
+        return toResponse(reportRepository.findById(reportId.toString()).orElseThrow());
     }
 
     @Override
     public void finalizeReport(UUID reportId) {
-        Report report = reportRepository.findById(reportId)
+        Report report = reportRepository.findById(reportId.toString())
                 .orElseThrow(() -> new ResourceNotFoundException("Report", reportId));
         report.setStatut(ReportDocStatus.FINALISE);
         reportRepository.save(report);
@@ -134,6 +146,21 @@ public class ReportServiceImpl implements ReportService {
         throw new BusinessException("DOCX export must be triggered via the Python AI pipeline");
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<ReportResponse> getAllReports() {
+        return reportRepository.findAll()
+                .stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public long deleteAll() {
+        long count = reportRepository.count();
+        reportRepository.deleteAll();
+        return count;
+    }
+
     private ReportResponse toResponse(Report r) {
         return ReportResponse.builder()
                 .id(r.getId()).missionId(r.getMission().getId())
@@ -142,7 +169,7 @@ public class ReportServiceImpl implements ReportService {
                 .filePathWord(r.getFilePathWord()).filePathPdf(r.getFilePathPdf())
                 .sections(sectionRepository.findByReportIdOrderByOrderIndexAsc(r.getId()).stream()
                         .map(s -> ReportSectionResponse.builder()
-                                .id(s.getId()).title(s.getTitle()).content(s.getContent())
+                                .id(UUID.fromString(s.getId())).title(s.getTitle()).content(s.getContent())
                                 .orderIndex(s.getOrderIndex()).isEditable(s.getIsEditable()).build())
                         .collect(Collectors.toList()))
                 .build();

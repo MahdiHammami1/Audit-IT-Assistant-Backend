@@ -36,6 +36,21 @@ public class EvaluationServiceImpl implements EvaluationService {
 
     @Override
     @Transactional(readOnly = true)
+    public EvaluationResponse getEvaluationById(UUID id) {
+        return evaluationRepository.findById(id)
+                .map(this::toResponse)
+                .orElseThrow(() -> new ResourceNotFoundException("Evaluation", id));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<EvaluationResponse> getAllEvaluations() {
+        return evaluationRepository.findAll()
+                .stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<EvaluationResponse> getEvaluationsByMission(UUID missionId) {
         return evaluationRepository.findByMissionId(missionId)
                 .stream().map(this::toResponse).collect(Collectors.toList());
@@ -54,6 +69,14 @@ public class EvaluationServiceImpl implements EvaluationService {
         eval.setValidationComment(request.getValidationComment());
 
         return toResponse(evaluationRepository.save(eval));
+    }
+
+    @Override
+    @Transactional
+    public long deleteAll() {
+        long count = evaluationRepository.count();
+        evaluationRepository.deleteAll();
+        return count;
     }
 
     private EvaluationResponse toResponse(Evaluation e) {
